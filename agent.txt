@@ -1,0 +1,270 @@
+#require "Rocky.class.nut:2.0.0"
+api <- Rocky();
+
+const HTML_STRING2 = @"<!DOCTYPE html>
+<html lang='en-US'>
+
+<head>
+    <title>Moodlight Web-UI</title>
+            <link href='//fonts.googleapis.com/css?family=Abel' rel='stylesheet'>
+    <script type='text/javascript'>
+    function changeRed(value) {
+        document.getElementById('valRed').innerHTML = value;
+        changeAll();
+    }
+
+    function changeGreen(value) {
+        document.getElementById('valGreen').innerHTML = value;
+        changeAll();
+    }
+
+    function changeBlue(value) {
+        document.getElementById('valBlue').innerHTML = value;
+        changeAll();
+    }
+
+    function changeMotor(value) {
+        document.getElementById('valMotor').innerHTML = value;
+
+    }
+
+
+    function changeAll() {
+        var r = document.getElementById('valRed').innerHTML;
+        var g = document.getElementById('valGreen').innerHTML;
+        var b = document.getElementById('valBlue').innerHTML;
+        document.getElementById('red').style.backgroundColor = 'rgb(' + r + ',0,0)';
+        document.getElementById('green').style.backgroundColor = 'rgb(0,' + g + ',0)';
+        document.getElementById('blue').style.backgroundColor = 'rgb(0,0,' + b + ')';
+        document.getElementById('change').style.backgroundColor = 'rgb(' + r + ',' + g + ',' + b + ')';
+    }
+    </script>
+     <style>
+            .center { margin-left: auto; margin-right: auto; margin-bottom: auto; margin-top: auto; }
+            body {background-color: rgb(70, 70, 70)}
+            p {color: white; font-family: Abel}
+            h2 {color: white; font-family: Abel; font-weight:bold}
+            h4 {color: white; font-family: Abel}
+            th {color: white; font-family: Abel}
+            td {color: white; font-family: Abel}
+            a:link {color: white; font-family: Abel}
+            a:visited {color: #cccccc; font-family: Abel}
+            a:hover {color: black; font-family: Abel}
+            a:active {color: black; font-family: Abel}
+        </style>
+</head>
+
+<body>
+    <h2>Moodlight Webcontroller - The Dome</h2>
+    <table class='w3-table w3-border' style='width:600px'>
+        <tbody>
+            <tr>
+                <th>Red</th>
+                <th>Green</th>
+                <th>Blue</th>
+            </tr>
+            <tr>
+                <td id='valRed'>255</td>
+                <td id='valGreen'>255</td>
+                <td id='valBlue'>204</td>
+            </tr>
+            <tr>
+                <td id='red' style='height:50px;background-color:red'></td>
+                <td id='green' style='background-color:green'></td>
+                <td id='blue' style='background-color:blue'></td>
+            </tr>
+            <tr>
+                <td>
+                    <input oninput='changeRed(this.value)' onchange='changeRed(this.value)' type='range' id='slideRed' name='slideRed' min='0' max='255'>
+                </td>
+                <td>
+                    <input oninput='changeGreen(this.value)' onchange='changeGreen(this.value)' type='range' id='slideGreen' name='slideGreen' min='0' max='255'>
+                </td>
+                <td>
+                    <input oninput='changeBlue(this.value)' onchange='changeBlue(this.value)' type='range' id='slideBlue' name='slideBlue' min='0' max='255'>
+                </td>
+            </tr>
+            <tr>
+                <th>Motor</th>
+            </tr>
+            <tr>
+                <td id='valMotor'>0</td>
+            </tr>
+            <tr>
+                <td>
+                    <input oninput='changeMotor(this.value)' onchange='changeMotor(this.value)' type='range' id='slideMotor' name='slideMotor' min='0' max='255'>
+                </td>
+            </tr>
+        </tbody>
+    </table>
+    <div id='change' style='height:100px;width:600px'></div>
+</body>
+
+</html>";
+
+const HTML_STRING = @"<!DOCTYPE html><html lang='en-US'><meta charset='UTF-8'>
+<html>
+    <head>
+        <title>Environment Data</title>
+        <link rel='stylesheet' href='https://netdna.bootstrapcdn.com/bootstrap/3.1.1/css/bootstrap.min.css'>
+        <link href='//fonts.googleapis.com/css?family=Abel' rel='stylesheet'>
+        <meta name='viewport' content='width=device-width, initial-scale=1.0'>
+        <style>
+            .center { margin-left: auto; margin-right: auto; margin-bottom: auto; margin-top: auto; }
+            body {background-color: #3366cc}
+            p {color: white; font-family: Abel}
+            h2 {color: #99ccff; font-family: Abel; font-weight:bold}
+            h4 {color: white; font-family: Abel}
+            td {color: white; font-family: Abel}
+            a:link {color: white; font-family: Abel}
+            a:visited {color: #cccccc; font-family: Abel}
+            a:hover {color: black; font-family: Abel}
+            a:active {color: black; font-family: Abel}
+        </style>
+    </head>
+    <body>
+        <div class='container' style='padding: 20px'>
+            <div style='border: 2px solid white'>
+                <h2 class='text-center'>Environment Data</h2>
+                <div class='current-status'>
+                    <h4 class='temp-status' align='center'>Current Temperature: <span></span>&deg;C</h4>
+                    <h4 class='humid-status' align='center'>Current Humidity: <span></span> per cent</h4>
+                    <h4 class='locale-status' align='center'>Sensor Location: <span></span></h4>
+                    <p class='timestamp' align='center'>&nbsp;<br>Last reading: <span></span></p>
+                </div>
+                <br>
+                <div class='update-button' align='center'>
+                    <p>Update Location Name <input id='location' style='width:200px;color:CornflowerBlue'></input>
+                    <button style='color:dimGrey;font-family:Abel' type='submit' id='location-button'>Set Location</button></p>
+                </div>
+                <br>
+                <p align='center'><small>Powered by Electric Imp</small></p>
+            </div>
+        </div>
+        <script src='https://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js'></script>
+        <script>
+            var agenturl = '%s';
+            getState(updateReadout);
+            $('.update-button button').click(getStateInput);
+            function getStateInput(e){
+                e.preventDefault();
+                var place = document.getElementById('location').value;
+                setLocation(place);
+                $('#name-form').trigger('reset');
+            }
+            function updateReadout(data) {
+                $('.temp-status span').text(data.temp);
+                $('.humid-status span').text(data.humid);
+                $('.locale-status span').text(data.locale);
+                var date = new Date();
+                $('.timestamp span').text(date.toTimeString());
+                setTimeout(function() {
+                    getState(updateReadout);
+                }, 120000);
+            }
+            function getState(callback) {
+                $.ajax({
+                    url : agenturl + '/state',
+                    type: 'GET',
+                    success : function(response) {
+                        if (callback) {
+                            callback(response);
+                        }
+                    }
+                });
+            }
+            function setLocation(place) {
+                $.ajax({
+                    url : agenturl + '/location',
+                    type: 'POST',
+                    data: JSON.stringify({ 'location' : place }),
+                    success : function(response) {
+                        if ('locale' in response) {
+                            $('.locale-status span').text(response.locale);
+                        }
+                    }
+                });
+            }
+        </script>
+    </body>
+</html>";
+
+api.get("/state", function(context){
+    local url = http.agenturl();
+    context.send(200, format(HTML_STRING2, url));
+});
+
+server.log("Storage Agent Started");
+
+
+
+function httpHandler(req, resp) {
+    server.log("Got a request");
+    
+    
+    
+    // Enforce HTTPS 
+    if (req.headers["x-forwarded-proto"] != "https") {
+        resp.send(401, "Insecure access forbidden");
+        return;
+    }
+    else 
+    {
+       
+    local color = {
+        red = 0,
+        green = 0,
+        blue = 0,
+        white = 0,
+        motor = 0
+        
+    }   
+    server.log("req path" + req.path);
+    if("/test" in req.path)
+    {
+        
+        resp.send(200, "<!DOCTYPE html><html><body><h1>My First Heading</h1><p>My first paragraph.</p></body></html>");
+    
+    }
+    else 
+    {
+ 
+
+    if ("red" in req.query) {
+        server.log("red: " + req.query["red"]);
+        color.red = req.query["red"].tointeger();
+    }
+    if ("green" in req.query) {
+        server.log("green: " + req.query["green"]);
+        color.green = req.query["green"].tointeger();
+    }
+    if ("blue" in req.query) {
+        server.log("blue: " + req.query["blue"]);
+        color.blue = req.query["blue"].tointeger();
+    }
+   if ("white" in req.query) {
+        server.log("white: " + req.query["white"]);
+        color.white = req.query["white"].tointeger();
+    }
+     if ("motor" in req.query) {
+        server.log("motor: " + req.query["motor"]);
+        color.motor = req.query["motor"].tointeger();
+    }
+
+
+    device.send("setLED", color);
+
+    
+    //device.send("ledBlink", true);
+    //device.send("eins",true);
+   local url = http.agenturl();
+   rest.send(200, format(HTML_STRING2, url));
+   //   resp.send(200, "The following settings have been set: \n RED: \t\t" + color.red + "\n GREEN: \t" + color.green + "\n BLUE: \t\t" + color.blue + "\n WHITE: \t" + color.white +"\n MOTOR: \t" + color.motor);
+    }
+    }
+}
+        
+
+http.onrequest(httpHandler); 
+
+
