@@ -1,0 +1,160 @@
+#require "Button.class.nut:1.2.0"
+server.log("Device started");
+server.log("button initialize");
+button <- hardware.pin1;
+
+server.setsendtimeoutpolicy(RETURN_ON_ERROR, WAIT_TIL_SENT, 10);
+
+function buttonPress() {
+    local state = button.read();
+    if (state == 1) {
+        // The button is released
+        server.log("Release");
+        los();
+        led.write(0);
+    } else {
+        // The button is pressed
+        server.log("Press");
+        led.write(1);
+    }
+}
+
+
+button.configure(DIGITAL_IN_PULLUP, buttonPress);
+
+
+function readback() {
+    // Function triggered by receipt of a byte from the connected computer
+    // Adds the input byte as an alphanumeric character to a buffer string
+    // which is displayed in the log when the remote user hits Enter
+    //local byte = .read();
+    
+    // Ignore initial input / no data signal
+    //if (byte == -1) return;
+    
+    //if (byte == 13) {
+        // Carriage return received? Output the string and clear it for the next input
+    //    server.log("Sent string: " + inputString);
+    //    inputString = "";
+    //} else {
+        // Add the input character to the buffer
+    //    inputString = inputString + chr(byte);
+    //}
+}
+
+server.log("uart initialize");
+uart <- hardware.uart57;
+uart.configure(9600, 8, PARITY_NONE, 1, NO_CTSRTS, readback);
+
+server.log("led initialize");
+led <- hardware.pin9;
+led.configure(DIGITAL_OUT, 0);
+
+
+
+//button.onPress(function(){
+
+//});
+
+//local h = 1;
+// while (h < 1000)
+ //       {
+      //      uart.write(h);
+      //      server.log("uart written: " + h);
+      //      h++;
+   //     }
+function eins(bool){
+local k = 1;
+ while (k < 1000)
+        {
+            uart.write(k);
+            server.log("uart written: " + k);
+            k++;
+            if(k==999)
+            {k=1}
+        }
+}
+
+
+function blinken(bool){
+    server.log("blinken start");
+    if(bool)
+    {
+        uart.write("someData");
+        local k = 1;
+    
+        local i = 1;
+        while (i < 11)
+        {
+            local t = 1.0/i;
+            server.log(t);
+        led.write(1);        
+        imp.sleep(t);
+        led.write(0);
+        imp.sleep(t);
+        i++;
+        }
+           
+        
+    }
+}
+agent.on("eins",eins);
+agent.on("ledBlink", blinken);
+led.write(1);
+
+function los(){
+    server.log("los");
+    uart.write("whi 125\n");
+    imp.sleep(0.5);
+    uart.write("whi 0\n");
+    imp.sleep(0.5);
+    uart.write("whi 125\n");
+    imp.sleep(0.5);
+    uart.write("whi 0\n");
+    imp.sleep(0.5);
+    uart.write("red 125\n");
+    imp.sleep(0.5);
+    uart.write("red 0\n");
+    imp.sleep(0.5);
+    uart.write("red 125\n");
+    imp.sleep(0.5);
+    uart.write("red 0\n");
+    imp.sleep(0.5);
+    uart.write("green 125\n");
+    imp.sleep(0.5);
+    uart.write("green 0\n");
+    imp.sleep(0.5);
+    uart.write("green 125\n");
+    imp.sleep(0.5);
+    uart.write("green 0\n");
+    imp.sleep(0.5);
+    uart.write("blue 125\n");
+    imp.sleep(0.5);
+    uart.write("blue 0\n");
+    imp.sleep(0.5);
+    uart.write("blue 125\n");
+    imp.sleep(0.5);
+    uart.write("blue 0\n");
+
+}
+function setRGB(r,g,b,w,m) {
+    uart.write("green " + g + "\n");
+    uart.write("blue " + b + "\n");
+    uart.write("white " + w + "\n");
+    uart.write("motor " + m + "\n");
+    uart.write("red " + r + "\n");
+
+    
+}
+
+function setLEDHandler(color) {
+    server.log("Got a setLED message from the agent");
+    server.log("The following settings have been set: \n RED: \t\t" + color.red + "\n GREEN: \t" + color.green + "\n BLUE: \t\t" + color.blue + "\n WHITE: \t" + color.white +"\n MOTOR: \t" + color.motor);
+	// this is a bug in the video
+    //setRGB(color.red, color.blue, color.green);
+    
+    setRGB(color.red, color.green, color.blue, color.white, color.motor);
+}
+
+agent.on("setLED", setLEDHandler);
+
